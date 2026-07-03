@@ -363,21 +363,31 @@
   // ---------- camera scanning ----------
   async function startCamera(){
     state.cameraStatus = 'Camera shuru ho raha hai...';
-    render();
+    state.cameraOn = true;
+    render(); // render first so video element exists in DOM
     try{
-      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      var constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+      videoStream = await navigator.mediaDevices.getUserMedia(constraints);
       var video = document.getElementById('scan-video');
-      if(!video) return;
+      if(!video){
+        state.cameraOn = false;
+        state.cameraStatus = 'Camera element nahi mila, dobara try karein';
+        render();
+        return;
+      }
       video.srcObject = videoStream;
+      video.setAttribute('playsinline', true);
+      video.setAttribute('muted', true);
+      video.muted = true;
       await video.play();
-      state.cameraOn = true;
       state.cameraStatus = 'QR code ko frame ke andar laayein';
       render();
       scanLoop();
     }catch(e){
       state.cameraOn = false;
-      state.cameraStatus = 'Camera available nahi hai — neeche manually phone number daalein';
+      state.cameraStatus = 'Camera blocked hai — browser settings mein permission allow karein, ya neeche number daalein';
       render();
+      console.error('Camera error:', e);
     }
   }
   function stopCamera(){
